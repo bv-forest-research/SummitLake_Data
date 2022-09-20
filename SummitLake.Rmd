@@ -453,7 +453,7 @@ The C calculations and plots for the SBS-01 runs can be found in the R script C_
 ###############
 
 # Field C LIVE - can skip if csv saved
-#SL_calc_field_C(raw_data = summit.lk.dat, live = TRUE) # You need to run lines 34-37 prior to this line (read in Summit Lake field data)
+#SL_calc_field_C(raw_data = summit.lk.dat, live = TRUE) # You need to run lines 46-50 prior to this line (read in Summit Lake field data)
 
 # Read in LIVE field C data
 field_C_L <- read.csv("./Outputs/csv/SummitLake_C_field_L.csv") # Once you've run the SL_calc_field_C function, you can just read in the data here
@@ -701,7 +701,7 @@ Carbon calculations (DEAD ONLY)
 ###############
 
 # Field C DEAD - can skip if csv saved
-#SL_calc_field_C(raw_data = summit.lk.dat, live = FALSE) # You need to run lines 34-37 prior to this line (read in Summit Lake field data)
+SL_calc_field_C(raw_data = summit.lk.dat, live = FALSE) # You need to run lines 34-37 prior to this line (read in Summit Lake field data)
 
 # Read in DEAD field BA data
 field_C_D <- read.csv("./Outputs/csv/SummitLake_C_field_D.csv") # Once you've run the SL_calc_field_C function, you can just read in the data here
@@ -1183,11 +1183,11 @@ final_L_C_Sx <- as.data.table(final_L_C_Sx)
 
 
 # See other R script to calculate field C - no spruce in unit 19
-#raw_data_C_Sx < SL_calc_field_C(raw_data = summit.lk.dat, live = TRUE, spp = "Sx")
-raw_data_C_Sx <- read.csv("./Outputs/csv/SummitLake_C_field_L_Sx.csv")
+#SL_calc_field_C(raw_data = summit.lk.dat, live = TRUE, spp = "Sx")
+SL_field_C_Sx <- read.csv("./Outputs/csv/SummitLake_C_field_L_Sx.csv")
 
 # Subset for final year
-final_field_C_L_Sx <- subset(raw_data_C_Sx, timestep == 27)
+final_field_C_L_Sx <- subset(SL_field_C_Sx, timestep == 27)
 
 
 # Merge SORTIE data and field data 
@@ -1257,11 +1257,11 @@ final_L_C_Bl <- as.data.table(final_L_C_Bl)
 
 
 # See other R script to calculate field C
-#raw_data_C_Bl < SL_calc_field_C(raw_data = summit.lk.dat, live = TRUE, spp = "Bl")
-raw_data_C_Bl <- read.csv("./Outputs/csv/SummitLake_C_field_L_Bl.csv")
+SL_calc_field_C(raw_data = summit.lk.dat, live = TRUE, spp = "Bl")
+SL_field_C_Bl <- read.csv("./Outputs/csv/SummitLake_C_field_L_Bl.csv")
 
 # Subset for final year
-final_field_C_L_Bl <- subset(raw_data_C_Bl, timestep == 27)
+final_field_C_L_Bl <- subset(SL_field_C_Bl, timestep == 27)
 
 
 # Merge SORTIE data and field data 
