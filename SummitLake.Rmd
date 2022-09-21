@@ -73,16 +73,10 @@ Create parameter files (one for each plot) for sortie runs
 
 I still need to update the base parameter file to include dead downed wood
 ```{r}
-####### create file structure: ---------------------------------------------------------------
-FileListdir <- "./Inputs/FileLists/"
+#------------------- create file structure and directories ------------------------------------------------------
 NewXmlsdir <- "./Inputs/ParameterFiles/"
 BaseXmlsdir <- "./Inputs/ParameterFiles/BaseFiles/"
 NewValsdir <- "./Inputs/ParameterValues/"
-
-
-if(!dir.exists(FileListdir)){
-  dir.create(FileListdir)
-}
 
 if(!dir.exists(NewXmlsdir)){
   dir.create(NewXmlsdir)
@@ -96,17 +90,18 @@ if(!dir.exists(NewValsdir)){
   dir.create(NewValsdir)
 }
 
-####### update variable names to reflect init trees prefixes used above ------------------------
+#------------------ update variable names to reflect init trees prefixes used above ------------------------
 sl_variable_names <- rsortie::treelistDfn(initname = "Init.Dens_", 
                                           numDigits = 1, diamMin = 0, 
                                           diamMax = 88, diamInc = 2) 
 
-###### create file lists and output updates
+#------------------------ create file lists and output updates --------------------------------
+param_name <- "SBS-0506f.xml"
+#if SBS 01 - use "SBS-01e.xml"
 
 #create the list of files (init trees, xml to use to make new parameter files
 fl <- data.table("type"=c(0,rep(1,length(grep("summit",list.files(NewValsdir))))),
-           "name"=c("SBS-0506f.xml",grep("summit",list.files(NewValsdir),value=TRUE)))
-#if SBS 01 - use "SBS-01e.xml"
+           "name"=c(param_name,grep("summit",list.files(NewValsdir),value=TRUE)))
 
 
 ###### Update the tree lists to include sortie run output location
@@ -129,7 +124,7 @@ lapply(1:length(treelists), function(i) write.csv(treelists[[i]],
 
 
 
-###### Make new parameter files ---------------------------------------------------------------
+#----------------------- Make new parameter files -----------------------------------------------
 
 rsortie::makeFiles(lstFiles = fl, path_basexmls = BaseXmlsdir, 
                    path_newvals = NewValsdir, path_newxmls = NewXmlsdir, 
