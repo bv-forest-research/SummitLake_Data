@@ -1,6 +1,6 @@
 ---
 title: "SummitLake"
-author: "Leah Walker"
+author: "Leah Walker & Alana Clason"
 date: "16/12/2021"
 output: html_document
 editor_options: 
@@ -10,22 +10,24 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-library(data.table)
-library(plyr)
-library(dplyr)
-library(xml2)
-library(stringr)
-library(tidyr)
-library(ggplot2)
-library(Rmisc)
-library(lme4)
-library(lmerTest)
-library(rsortie)
+#------------------------------ Load libraries---------------------------------#
+ls <- c("tidyverse", "data.table", "plyr","xml2") # Data Management and Manipulation
+ls <- append(ls, c("Rmisc")) # 
+ls <- append(ls, c("rsortie")) # rsortie
+ls <- append(ls, c("lme4", "lmerTest")) # modelling
+
+# Install if needed -- then load. 
+new.packages <- ls[!(ls %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+lapply(ls, library, character.only = TRUE)  # load the required packages
+rm(ls, new.packages)
+
 
 source("./R/clean_summit_lake_data.R")
-source("../Carbon/CarbonFunctions.R") # Need to have the Carbon repo downloaded onto your system
-source("../Carbon/AllometryFunctions.R") # same
-source("./R/SL_field_calc_functions.R")
+#source("./R/calc_field_BA.R")
+#source("../Carbon/CarbonFunctions.R")
+#source("../Carbon/AllometryFunctions.R")
+#source("./R/calc_field_C.R")
 
 BA.function <- function(DBH) {pi*(DBH/200)^2}
 
@@ -36,11 +38,12 @@ path_outputs <- "./Outputs/"
 I didn't have time to create nice functions for each of the prep steps (sorry!), so I've just included them all here, in the correct order. You can skip down to line 426 for where the carbon calculations and analysis begin. -LW
 -----------------------------------------
 
-Clean data
-*Read in the Summit Lake field data here, if running other code processing the data*
+
+Read in the raw summit lake data from 2009 and 2019, summarize each plot by species-dbh class and create initial tree conditions to run sortie.
+
+*Read in the Summit Lake field data and create initial tree condition csvs here*
 ```{r}
 ################## Read in the data ######################
-#rm(list=ls())
 
 ### Run these three likes of code if running any other code to do with the field data
 summit.lk.dat <- read.csv("./Inputs/Data/SummitLakeData.csv")
@@ -59,34 +62,73 @@ PlotArea <- 0.05 # in ha
 # Clean the data to be in a format readable by SORTIE
 dat <- clean_summit_lk_dat(dbhClSize = dbhClSize, MinDBHClass = MinDBHClass,
                            MaxDBHClass = MaxDBHClass, PlotArea = PlotArea,
-                           raw_data = summit.lk.dat)
+                           raw_data = summit.lk.dat, inits_dir ="./Inputs/ParameterValues/")
 
 ```
 
 
 
-Prepare Inputs
-*Don't need to run unless making new parameter files*
+Create parameter files (one for each plot) for sortie runs
+*Run to create new parameter files*
+
+I still need to update the base parameter file to include dead downed wood
 ```{r}
-sl_fl <- "./Inputs/FileLists/"
+#------------------- create file structure and directories ------------------------------------------------------
+NewXmlsdir <- "./Inputs/ParameterFiles/"
+BaseXmlsdir <- "./Inputs/ParameterFiles/BaseFiles/"
+NewValsdir <- "./Inputs/ParameterValues/"
 
-sl_basexmls <- "./Inputs/ParameterFiles/BaseFiles/"
-sl_newvals <- "./Inputs/ParameterValues/"
-sl_newxmls <- "./Inputs/ParameterFiles/"
+if(!dir.exists(NewXmlsdir)){
+  dir.create(NewXmlsdir)
+}
 
-sl_variable_names <- treelistDfn(initname = "Init.Dens_", numDigits = 1, diamMin = 0, diamMax = 88, diamInc = 2) 
+if(!dir.exists(BaseXmlsdir)){
+  dir.create(BaseXmlsdir)
+}
 
-### SBS-01 ###
+if(!dir.exists(NewValsdir)){
+  dir.create(NewValsdir)
+}
 
-lstFiles_01 <- (paste0(sl_fl, "InitSummitLake_01.csv"))
+#------------------ update variable names to reflect init trees prefixes used above ------------------------
+sl_variable_names <- rsortie::treelistDfn(initname = "Init.Dens_", 
+                                          numDigits = 1, diamMin = 0, 
+                                          diamMax = 88, diamInc = 2) 
 
-makeFiles(lstFiles = lstFiles_01, path_basexmls = sl_basexmls, path_newvals = sl_newvals, path_newxmls = sl_newxmls, variable_names = sl_variable_names)
+#------------------------ create file lists and output updates --------------------------------
+param_name <- "SBS-0506f.xml"
+#if SBS 01 - use "SBS-01e.xml"
 
-### SBS-0506 ###
+#create the list of files (init trees, xml to use to make new parameter files
+fl <- data.table("type"=c(0,rep(1,length(grep("summit",list.files(NewValsdir))))),
+           "name"=c(param_name,grep("summit",list.files(NewValsdir),value=TRUE)))
 
-lstFiles_0506 <- (paste0(sl_fl, "InitSummitLake_0506.csv"))
 
-makeFiles(lstFiles = lstFiles_0506, path_basexmls = sl_basexmls, path_newvals = sl_newvals, path_newxmls = sl_newxmls, variable_names = sl_variable_names)
+###### Update the tree lists to include sortie run output location
+#must use double backslash not single if writing this in R
+Output_path <- "D:\\GitHub\\SummitLake_DataPrep\\Outputs\\"
+
+### Update each parameter file with new directory information:
+#Read in the tree lists
+treelists <- paste0(NewValsdir,grep("summit",list.files(NewValsdir),value=TRUE)) %>%
+  map(fread)
+names(treelists) <- grep("summit",list.files(NewValsdir),value=TRUE)
+#update with valid output directory
+treelists <- treelists %>% 
+  map(~ rbind(.x, data.table(" "=c("NA","ShortOutput","Output"),
+                             Interior_Spruce=c("NA",Output_path,Output_path)),fill=TRUE))
+#write out the new csvs
+lapply(1:length(treelists), function(i) write.csv(treelists[[i]], 
+                                        file = paste0(NewValsdir,names(treelists[i])),
+                                        row.names = FALSE))
+
+
+
+#----------------------- Make new parameter files -----------------------------------------------
+
+rsortie::makeFiles(lstFiles = fl, path_basexmls = BaseXmlsdir, 
+                   path_newvals = NewValsdir, path_newxmls = NewXmlsdir, 
+                   variable_names = sl_variable_names)
 
 ```
 

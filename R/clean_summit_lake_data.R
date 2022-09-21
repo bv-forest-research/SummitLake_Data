@@ -3,13 +3,8 @@
 
 # A function to clean the Summit lk 1992 - 2019 data
 
-library(data.table)
-library(magrittr)
-library(dplyr)
-library(plyr)
-
 clean_summit_lk_dat <- function(dbhClSize,MinDBHClass,MaxDBHClass,PlotArea,
-                                raw_data) {
+                                raw_data,inits_dir) {
   
   # Create a vector of DBH size classes, by 2 cm increments
   diamClasses <- seq(MinDBHClass,(MaxDBHClass+dbhClSize), by=dbhClSize)
@@ -93,8 +88,8 @@ clean_summit_lk_dat <- function(dbhClSize,MinDBHClass,MaxDBHClass,PlotArea,
   
   # Count number of trees per DBH bin, per species, per unit
   dat.summit.m.s <- dat.summit.m %>% 
-    group_by(unit, Spp, DBH_bin) %>% 
-    mutate(count = n())
+    dplyr::group_by(unit, Spp, DBH_bin) %>% 
+    dplyr::mutate(count = n())
   dat.summit.m.s <- as.data.table(dat.summit.m.s)
   # Calculate stems per hectare
   dat.summit.m.s[, SPH := count/ PlotArea]
@@ -148,7 +143,15 @@ clean_summit_lk_dat <- function(dbhClSize,MinDBHClass,MaxDBHClass,PlotArea,
     setnames(dat.unit, c("variable", "Sx", "Pl", "Bl", "At", "Lw", "Fd", "Ac", "Ep"), 
              c(" ", "Interior_Spruce", "Lodgepole_Pine", "Subalpine_Fir", "Trembling_Aspen",
                "Western_Larch", "Douglas_Fir", "Black_Cottonwood", "Paper_Birch"))
-    write.csv(dat.unit, paste0("./Inputs/ParameterValues/summit",ii,".csv"), row.names = FALSE)
+    
+    if(dir.exists(inits_dir)){
+      write.csv(dat.unit, paste0(inits_dir,"summit_",ii,".csv"), row.names = FALSE)
+    }else{
+      dir.create(inits_dir)
+      write.csv(dat.unit, paste0(inits_dir,"summit_",ii,".csv"), row.names = FALSE)
+    }
+    
+    
   }
 
 }

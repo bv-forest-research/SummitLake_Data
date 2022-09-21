@@ -1,0 +1,12 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+Inputs/ParameterFiles/BaseFiles/
+
+Inputs/ParameterFiles/
+
+Inputs/ParameterValues/
+
+temp.xml
